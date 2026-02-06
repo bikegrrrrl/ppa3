@@ -6,6 +6,7 @@ const http = require("http");
 const url = require("url");
 // In memory data model (persistence added in PPA 4)
 const slots = [];
+
 function sendJson(res, statusCode, payload) {
     res.writeHead(statusCode, { "Content-Type": "application/json" });
     res.end(JSON.stringify(payload));
