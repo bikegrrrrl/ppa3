@@ -2,73 +2,179 @@
 // Appointment scheduling server (PPA 3)
 // Uses Node.js http module only (no frameworks)
 // Sequential POST handling: parameters are passed in the URL query string
+
 const http = require("http");
 const url = require("url");
+
+const fs = require("fs");
+
+function serveHtml(res, filePath) {
+    fs.readFile(filePath, function (err, content) {
+        if (err) {
+            res.writeHead(500, { "Content-Type": "text/plain" });
+            res.end("Server error");
+            return;
+        }
+        res.writeHead(200, { "Content-Type": "text/html" });
+        res.end(content);
+    });
+}
+
 // In memory data model (persistence added in PPA 4)
-const slots = [];
+
+// add to these as needed
+const slots = [
+  {
+    id: 1,
+    startTime: "2026-03-01T09:00",
+    endTime: "2026-03-01T09:30",
+    status: "available"
+  },
+  {
+    id: 2,
+    startTime: "2026-03-01T10:00",
+    endTime: "2026-03-01T10:30",
+    status: "available"
+  }
+];
+
+
 
 function sendJson(res, statusCode, payload) {
+
     res.writeHead(statusCode, { "Content-Type": "application/json" });
     res.end(JSON.stringify(payload));
+
 }
+
+
 function nextId() {
+
     return slots.length + 1;
+
 }
+
+
 function validateSlotTimes(startTime, endTime) {
+
     if (typeof startTime !== "string" || startTime.trim().length === 0) {
         return { ok: false, message: "startTime is required" };
     }
+
     if (typeof endTime !== "string" || endTime.trim().length === 0) {
         return { ok: false, message: "endTime is required" };
     }
     // TODO (bonus): verify endTime is after startTime
+    if (endTime < startTime) {
+        return {ok: false, message: "startTime must be before endTime"}
+    }
+    // Check for duplicate - tried this here, and is added to the server, further down
+    //const duplicate = isDuplicate(startTime, endTime);
+    //if (duplicate === true)  {
+    //    return {ok: false, message: "The time slot entered is a duplicate"}
+    //    }
     return { ok: true, message: "" };
 }
 
 
 function isDuplicate(startTime, endTime) {
-    // TODO (bonus): return true if a slot with the same times already exists return false;
+   // TODO (bonus): return true if a slot with the same times already exists return false;
+    for (const s in slots) {
+        if (slots[s].startTime === startTime && slots[s].endTime === endTime) {
+            console.log ('>>> Dupe found')
+            return true;
+        }
+    }
+    // Entered time is not duplicate
+    return false;
 }
+
+// This should also check time overlap, I need to think that through
 
 
 const server = http.createServer(function (req, res) {
-    const parsedUrl = url.parse(req.url, true);
-    const path = parsedUrl.pathname;
-    const query = parsedUrl.query;
+
+    const parsedUrl     = url.parse(req.url, true);
+    const path          = parsedUrl.pathname;
+    const query         = parsedUrl.query;
+
+    let filePath = "./public/index.html";
+
+    if (req.url === "/provider") { filePath = "./public/provider.html"; }
+    if (req.url === "/client") { filePath = "./public/client.html"; }
 
     if (req.method === "GET" && path === "/api/slots") {
+    
         sendJson(res, 200, slots);
         return;
     }
 
-if (req.method === "POST" && path === "/api/slots") {
-    
-    const startTime = query.startTime;
-    const endTime = query.endTime;
-    
-    const result = validateSlotTimes(startTime, endTime);
-    if (!result.ok) {
-        sendJson(res, 400, { error: result.message });
+    if (path === "/provider") {
+        serveHtml(res, "./public/provider.html");
         return;
     }
 
-    // TODO (bonus): prevent duplicates
-    // if (isDuplicate(startTime, endTime)) {
-    // sendJson(res, 409, { error: "Duplicate slot" });
-    // return;
-    // }
-    const slot = {
-        id : nextId(),
-        startTime : startTime,
-        endTime : endTime,
-        status : "available"
-    };
-    slots.push(slot);
-    sendJson(res, 201, slot);
-    return;
-}
-sendJson(res, 404, { error: "Not found" });
+    if (path === "/client") {
+        serveHtml(res, "./public/client.html");
+        return;
+    }
+
+    if (path === "/") {
+        serveHtml(res, "./public/index.html");
+        return;
+    }
+
+    if (req.url === "/provider.js") {
+        fs.readFile("./public/provider.js", function(err, content) {
+            if (err) {
+                res.writeHead(404, { "Content-Type": "text/plain" });
+                res.end("File not found");
+                return;
+            }
+            res.writeHead(200, { "Content-Type": "application/javascript" });
+            res.end(content);
+        });
+        return;
+    }
+
+
+    // valid endpoint
+    if (req.method === "POST" && path === "/api/slots") {
+        
+        const startTime     = query.startTime;
+        const endTime       = query.endTime;
+        
+        const result        = validateSlotTimes(startTime, endTime);
+        
+        if (!result.ok) {
+            sendJson(res, 400, { error: result.message });
+            return;
+        }
+
+        // TODO (bonus): prevent duplicates
+        if (isDuplicate(startTime, endTime)) {
+            sendJson(res, 409, { error: "Duplicate slot" });
+            return;
+        }
+        
+        const slot = {
+            id : nextId(),
+            startTime : startTime,
+            endTime : endTime,
+            status : "available"
+        };
+
+        slots.push(slot);
+        
+        sendJson(res, 201, slot);
+        return;
+
+    }
+    sendJson(res, 404, { error: "Not found" });
+
 });
+
+
 
 server.listen(3000, function (){
     console.log("Server running at http://localhost:3000");
