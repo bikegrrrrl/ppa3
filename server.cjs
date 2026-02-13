@@ -5,6 +5,15 @@
 
 const http = require("http");
 const url = require("url");
+//const parsed = new URL(req.url, "http://localhost:3000");
+
+/*
+const url = require("url");
+const parsed = url.parse(req.url, true);
+/
+New way:
+const parsed = new URL(req.url, "http://localhost:3000");
+*/
 
 const fs = require("fs");
 
@@ -78,7 +87,7 @@ function validateSlotTimes(startTime, endTime) {
 
 
 function isDuplicate(startTime, endTime) {
-   // TODO (bonus): return true if a slot with the same times already exists return false;
+   // return true if a slot with the same times already exists return false;
     for (const s in slots) {
         if (slots[s].startTime === startTime && slots[s].endTime === endTime) {
             console.log ('>>> Dupe found')
@@ -93,7 +102,7 @@ function isDuplicate(startTime, endTime) {
 
 
 const server = http.createServer(function (req, res) {
-
+    // const parsed = new URL(req.url, "http://localhost:3000");
     const parsedUrl     = url.parse(req.url, true);
     const path          = parsedUrl.pathname;
     const query         = parsedUrl.query;
@@ -151,7 +160,7 @@ const server = http.createServer(function (req, res) {
             return;
         }
 
-        // TODO (bonus): prevent duplicates
+        // prevent duplicates
         if (isDuplicate(startTime, endTime)) {
             sendJson(res, 409, { error: "Duplicate slot" });
             return;
