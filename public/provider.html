@@ -28,7 +28,7 @@
         <label>End time (example: 2026-03-01T09:30)</label>
         <input id="endTime" type="text" placeholder="YYYY-MM-DDTHH:MM">
         <label for="myStatus">Select Appt Status</label>
-        <select id="myStatus" name="myStatus">
+        <select id="myStatus" name="myStatus" type="text">
             <option value="Available">Available</option>
             <option value="Booked">Booked</option>
         </select>
@@ -36,7 +36,6 @@
         <input id="myName" type="text" placeholder="your name">
         
         <button id="createBtn" type="submit">Create slot</button>
-        <button id="deleteBtn" type="delete">Delete slot</button>
     </form>
 
     <h2>Current slots</h2>

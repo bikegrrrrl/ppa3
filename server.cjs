@@ -4,7 +4,7 @@
 // Sequential POST handling: parameters are passed in the URL query string
 
 const http = require("http");
-const url = require("url");
+//const url = require("url");
 //const parsed = new URL(req.url, "http://localhost:3000");
 
 /*
@@ -37,18 +37,17 @@ const slots = [
     id: 1,
     startTime: "2026-03-01T09:00",
     endTime: "2026-03-01T09:30",
-    myStatus: "available", 
+    myStatus: "Available", 
     myName: "Jen"
   },
   {
     id: 2,
     startTime: "2026-03-01T10:00",
     endTime: "2026-03-01T10:30",
-    myStatus: "available", 
+    myStatus: "Available", 
     myName: "John"
   }
 ];
-
 
 
 function sendJson(res, statusCode, payload) {
@@ -75,7 +74,7 @@ function validateSlotTimes(startTime, endTime) {
     if (typeof endTime !== "string" || endTime.trim().length === 0) {
         return { ok: false, message: "endTime is required" };
     }
-    // TODO (bonus): verify endTime is after startTime
+    // (bonus): verify endTime is after startTime
     if (endTime < startTime) {
         return {ok: false, message: "startTime must be before endTime"}
     }
@@ -105,9 +104,9 @@ function isDuplicate(startTime, endTime) {
 
 const server = http.createServer(function (req, res) {
     // const parsed = new URL(req.url, "http://localhost:3000");
-    const parsedUrl     = url.parse(req.url, true);
-    const path          = parsedUrl.pathname;
-    const query         = parsedUrl.query;
+    const parsedUrl = new URL(req.url, "http://localhost:3000");
+    const path = parsedUrl.pathname;
+    const query = Object.fromEntries(parsedUrl.searchParams.entries());
 
     let filePath = "./public/index.html";
 
@@ -167,14 +166,25 @@ const server = http.createServer(function (req, res) {
 
     // valid endpoint
     if (req.method === "POST" && path === "/api/slots") {
+        console.log('query:', query);
         
+        /*
+        const parsedUrl = new URL(req.url, "http://localhost:3000");
+        const path = parsedUrl.pathname;
+
+        const startTime = parsedUrl.searchParams.get("startTime");
+        const endTime   = parsedUrl.searchParams.get("endTime");
+        const myName    = parsedUrl.searchParams.get("myName");
+        const myStatus  = parsedUrl.searchParams.get("myStatus");
+
+        */
+
         const startTime     = query.startTime;
         const endTime       = query.endTime;
         const myName        = query.myName;
         const myStatus      = query.myStatus;
+        // TODO validate all input
         const result        = validateSlotTimes(startTime, endTime);
-        
-        //console.log("result:", result);
         
         if (!result.ok) {
             sendJson(res, 400, { error: result.message });
@@ -203,10 +213,7 @@ const server = http.createServer(function (req, res) {
     }
     sendJson(res, 404, { error: "Not found" });
 
-   
-
 });
-
 
 
 

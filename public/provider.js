@@ -40,7 +40,6 @@ function addSlotRow(slot) {
 
 
 function parseJsonSafely(text) {
-
     try {
         return { ok: true, value: JSON.parse(text) };
     } catch (err) {
@@ -51,45 +50,49 @@ function parseJsonSafely(text) {
 
 
 // POST /api/slots?startTime=...&endTime=...
-function submitNewSlot(startTime, endTime) {
+function submitNewSlot(startTime, endTime, myName, myStatus) {
 
     const xhr = new XMLHttpRequest();
 
     const requestUrl =
         "/api/slots?startTime=" + encodeURIComponent(startTime) +
         "&endTime=" + encodeURIComponent(endTime) +
-        "&myStatus" + encodeURIComponent(myStatus) +
+        "&myStatus=" + encodeURIComponent(myStatus) +
         "&myName=" + encodeURIComponent(myName);
+
+    // console.log('request url:', requestUrl);
 
     xhr.open("POST", requestUrl);
 
     xhr.onload = function () {
 
-        // TODO: parse JSON response safely
+        // parse JSON response safely
         const parsed = parseJsonSafely(xhr.responseText);
         if (!parsed.ok) {
             setMessage("Invalid server response", "error");
             return;
         }
                 
-        // TODO: if status 201, addSlotRow(slot) and show a success message
+        // if status 201, addSlotRow(slot) and show a success message
         if (xhr.status === 201) {
             const slot = parsed.value;
             addSlotRow(slot);   // show in table
             setMessage("slot created", "ok"); //success message
             //const slot = JSON.parse(xhr.responseText);
             console.log("Created slot:", slot);
+            // console.log('request url:', requestUrl);
             return;
         }
 
-        // TODO: if status 400 or 409, show the server error message
+        // if status 400 or 409, show the server error message
         if (xhr.status === 400 || xhr.status === 409) {
             const err = parsed.value;
             setMessage(err.error, "error");
             console.error(err.error);
             return;
         }
-        // TODO: otherwise, show a generic error message
+        // otherwise, show a generic error message
+        setMessage(err.error, "An error has occurred");
         console.error("Unexpected server error");
     };
 
@@ -97,14 +100,16 @@ function submitNewSlot(startTime, endTime) {
 }
 
 
-// POST /api/slots?startTime=...&endTime=...
-function deleteSlot(startTime, endTime) {
+// POST
+// You could have a delete button next to every slot on the table that 
+// holds the timeslot id and use that to identify the timeslot for deletion
+//
+function deleteSlot(id) {
 
     const xhr = new XMLHttpRequest();
 
     const requestUrl =
-        "/api/slots?startTime=" + encodeURIComponent(startTime) +
-        "&endTime=" + encodeURIComponent(endTime);
+        "/api/slots?id=" + encodeURIComponent(id);
 
     xhr.open("DELETE", requestUrl);
 
@@ -121,11 +126,13 @@ function deleteSlot(startTime, endTime) {
         if (xhr.status === 201) {
             const slot = parsed.value;
             //addSlotRow(slot);   // show in table
+            // TODO make a deleteRow(slot) 
+            // deleteRow(slot);
             setMessage("Slot deleted", "ok"); //success message
             // re load slots
             loadSlots();
             //const slot = JSON.parse(xhr.responseText);
-            console.log("Deleted slot:", slot);
+            console.log("Deleted slot");
             return;
         }
 
@@ -189,7 +196,7 @@ document.getElementById("slotForm").addEventListener("submit", function(event) {
     const myStatus = document.getElementById("myStatus").value;
     const myName = document.getElementById("myName").value;
 
-    submitNewSlot(startTime, endTime, myStatus, myName);
+    submitNewSlot(startTime, endTime, myName, myStatus);
 
 });
 
